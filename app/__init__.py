@@ -1,0 +1,1 @@
+"""Maty Agent package."""
