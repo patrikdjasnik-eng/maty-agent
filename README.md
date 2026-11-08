@@ -2,44 +2,64 @@
 
 Agent pro zpracování rezervací z Bookio notifikací doručených do Seznam Emailu.
 
-## Co dělá
+## 🚀 Rychlé spuštění (Windows)
 
-- připojí se k e-mailu přes IMAP,
-- vyhledá Bookio notifikace,
-- rozpozná novou, změněnou a zrušenou rezervaci,
-- uloží události do lokální SQLite databáze,
-- nespolehne se na stav přečteno/nepřečteno a zprávy deduplikuje podle Message-ID,
-- každých 48 hodin vytvoří report,
-- volitelně odešle report přes SMTP na zvolený e-mail.
+1. Nainstaluj Python 3.10 nebo novější.
+2. Stáhni repozitář a otevři PowerShell v jeho složce.
+3. Vytvoř lokální konfigurační soubor:
 
-## Rychlý start
+```powershell
+Copy-Item .env.example .env
+```
 
-1. Zkopíruj `.env.example` jako `.env`.
-2. Doplň e-mail a heslo pro IMAP/SMTP.
-3. Spusť:
+4. Otevři `.env` a doplň přihlašovací údaje k e-mailové schránce. Výchozí nastavení používá IMAP/SMTP Seznamu. Pokud poskytovatel vyžaduje aplikační heslo, použij ho místo běžného hesla.
+5. Spusť agenta:
 
 ```powershell
 python -m app.main
 ```
 
-Jednorázové načtení bez nekonečné smyčky:
+Jeden průchod schránkou bez čekání na další cyklus:
 
 ```powershell
 python -m app.main --once
 ```
 
+Projekt používá standardní knihovnu Pythonu; nejsou potřeba externí balíčky ani `pip install`. Pokud příkaz `python` ve Windows nefunguje, zkus `py -3`.
+
+## Co agent dělá
+
+- připojí se k e-mailu přes IMAP,
+- vyhledá Bookio notifikace,
+- rozpozná novou, změněnou a zrušenou rezervaci,
+- uloží události do lokální SQLite databáze,
+- deduplikuje zprávy podle Message-ID,
+- každých 48 hodin vytvoří report,
+- volitelně odešle report přes SMTP na zvolený e-mail.
+
+Reporty se ukládají do složky `reports/`; databáze je ve výchozím nastavení `data/maty_agent.db`.
+
+## Konfigurace
+
+Všechny hodnoty se nastavují v lokálním souboru `.env`. Výchozí proměnné a jejich popis najdeš v [`.env.example`](.env.example). Mezi důležité patří:
+
+- `EMAIL_USER`, `EMAIL_PASSWORD` — přístup k e-mailové schránce,
+- `IMAP_HOST`, `IMAP_PORT` — příjem zpráv,
+- `SMTP_HOST`, `SMTP_PORT` — odesílání reportů,
+- `REPORT_SEND_EMAIL` — zapnutí nebo vypnutí e-mailového reportu,
+- `REPORT_TO_EMAIL` — volitelný příjemce reportu,
+- `POLL_SECONDS` — interval kontroly schránky.
+
 ## Bezpečnost
 
-Přihlašovací údaje patří pouze do lokálního `.env`. Soubor je ignorovaný Gitem. Doporučené je použít samostatné heslo pro aplikaci, pokud ho poskytovatel účtu podporuje.
+Přihlašovací údaje patří pouze do lokálního `.env`. Tento soubor nesmí být commitnutý do Gitu. Doporučené je použít samostatné aplikační heslo, pokud ho poskytovatel účtu podporuje. Před zapnutím automatického odesílání ověř adresu příjemce reportů.
 
 ## Report
 
-Report obsahuje:
+Report obsahuje počet nových rezervací, změn a zrušení a dostupné údaje o zákazníkovi, službě, datu/času a kontaktu. Přesnost parseru závisí na podobě skutečných Bookio e-mailových šablon.
 
-- počet nových rezervací,
-- počet změn,
-- počet zrušení,
-- seznam zpracovaných Bookio událostí,
-- zákazníka, službu, datum/čas a kontakt, pokud je lze ze zprávy spolehlivě vyčíst.
+## Vývoj a testy
 
-Přesný parser lze doladit podle reálné Bookio šablony bez změny zbytku architektury.
+```powershell
+python -m pytest -q
+```
